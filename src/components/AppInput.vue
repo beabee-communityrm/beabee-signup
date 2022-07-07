@@ -21,9 +21,9 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from '@vue/reactivity';
+import { computed } from 'vue';
 import useVuelidate from '@vuelidate/core';
-import { email, required, requiredIf } from '@vuelidate/validators';
+import { email, requiredIf } from '@vuelidate/validators';
 
 const emit = defineEmits(['update:modelValue']);
 const props = defineProps<{

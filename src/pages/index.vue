@@ -86,7 +86,7 @@
 import slugify from 'slugify';
 import { computed, reactive, ref } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
-import { sameAs } from '@vuelidate/validators';
+import { required, sameAs } from '@vuelidate/validators';
 import AppInput from '../components/AppInput.vue';
 import AppCheckbox from '../components/AppCheckbox.vue';
 import AppSelect from '../components/AppSelect.vue';
@@ -128,7 +128,7 @@ const formData = reactive({
 });
 
 const validation = useVuelidate(
-  { readAgreements: { yes: sameAs(true) } },
+  { logo: { required }, readAgreements: { yes: sameAs(true) } },
   formData
 );
 </script>
