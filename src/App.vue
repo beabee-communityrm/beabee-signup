@@ -1,4 +1,3 @@
 <template>
-  <h1>My app</h1>
-  <router-view />
+  <div class="max-w-xl mx-auto"><router-view /></div>
 </template>
