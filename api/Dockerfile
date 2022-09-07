@@ -13,6 +13,7 @@ FROM node:16.13-alpine as app
 
 ENV NODE_ENV=production
 ENV NODE_OPTIONS=--enable-source-maps
+ENV TYPEORM_ENTITIES=built/models/*.js
 
 WORKDIR /opt/beabee-signup
 
