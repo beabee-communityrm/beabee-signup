@@ -1,2 +1,3 @@
-/dist/
-/locales/
+/api/built/
+/app/dist/
+/app/locales/
