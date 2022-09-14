@@ -6,11 +6,13 @@ services:
       context: .
     volumes:
       - ./built:/opt/beabee-signup/built
+      - ./src/migrations:/opt/beabee-signup/src/migrations
     env_file:
       - .env
     environment:
       - NODE_ENV=development
       - TYPEORM_URL=postgres://beabee-signup:beabee-signup@db/beabee-signup
+      - TYPEORM_MIGRATIONS_DIR=src/migrations/
     ports:
       - ${MAIN_PORT}:3000
 

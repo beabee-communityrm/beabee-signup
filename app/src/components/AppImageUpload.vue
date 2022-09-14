@@ -3,10 +3,10 @@
     <div class="flex items-start gap-4">
       <div class="bg-grey-light flex-0 basis-28">
         <img
-          :src="imageUrl"
+          :src="imageUrl || undefined"
           :width="width"
           :height="height"
-          class="w-full h-auto"
+          class="w-full h-auto bg-white"
           :class="!imageUrl && 'invisible'"
         />
       </div>
@@ -31,7 +31,7 @@ import AppButton from './AppButton.vue';
 
 const emit = defineEmits(['update:modelValue']);
 const props = defineProps<{
-  modelValue: string;
+  modelValue: File | null;
   width: number;
   height: number;
   label?: string;
@@ -40,15 +40,14 @@ const props = defineProps<{
 
 const inputRef = ref<HTMLInputElement>();
 
-const imageUrl = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value),
-});
+const imageUrl = computed(
+  () => props.modelValue && URL.createObjectURL(props.modelValue)
+);
 
 function handleChange() {
   const file = inputRef.value?.files?.item(0);
   if (file) {
-    imageUrl.value = URL.createObjectURL(file);
+    emit('update:modelValue', file);
   }
 }
 </script>
