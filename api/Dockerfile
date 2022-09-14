@@ -1,4 +1,4 @@
-FROM node:16.13-alpine as builder
+FROM node:16-alpine as builder
 
 WORKDIR /builder
 
@@ -9,7 +9,7 @@ COPY tsconfig.json ./
 COPY ./src ./src/
 RUN NODE_ENV=production npm run build
 
-FROM node:16.13-alpine as app
+FROM node:16-alpine as app
 
 ENV NODE_ENV=production
 ENV NODE_OPTIONS=--enable-source-maps
