@@ -1,7 +1,7 @@
 import 'module-alias/register';
 
-import express from 'express';
-import { useExpressServer } from 'routing-controllers';
+import express, { ErrorRequestHandler } from 'express';
+import { HttpError, useExpressServer } from 'routing-controllers';
 
 import * as db from '@core/database';
 import { mainLogger, requestErrorLogger, requestLogger } from '@core/logging';
@@ -19,7 +19,27 @@ db.connect().then(() => {
   useExpressServer(app, {
     controllers: [OrganisationController],
     routePrefix: '/1.0',
+    validation: {
+      forbidNonWhitelisted: true,
+      forbidUnknownValues: true,
+      whitelist: true,
+      validationError: {
+        target: false,
+        value: false,
+      },
+    },
+    defaults: {
+      paramOptions: {
+        required: true,
+      },
+    },
   });
+
+  app.use(function (err, req, res, next) {
+    if (!(err instanceof HttpError)) {
+      next(err);
+    }
+  } as ErrorRequestHandler);
 
   app.use(requestErrorLogger);
 
