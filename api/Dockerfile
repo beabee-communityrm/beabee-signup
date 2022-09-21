@@ -18,6 +18,9 @@ ENV TYPEORM_ENTITIES=built/models/*.js
 
 WORKDIR /opt/beabee-signup
 
+RUN mkdir -p uploads/logos
+RUN chown -R node:node uploads
+
 COPY --chown=node:node --from=builder /builder/package.json /builder/package-lock.json ./
 COPY --chown=node:node --from=builder /builder/node_modules/ ./node_modules/
 RUN npm prune

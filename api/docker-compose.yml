@@ -7,6 +7,7 @@ services:
     volumes:
       - ./built:/opt/beabee-signup/built
       - ./src/migrations:/opt/beabee-signup/src/migrations
+      - app_uploads:/opt/beabee-signup/uploads
     env_file:
       - .env
     environment:
@@ -26,4 +27,5 @@ services:
       - POSTGRES_DATABASE=beabee-signup
 
 volumes:
+  app_uploads:
   db_data:

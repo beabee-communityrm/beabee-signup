@@ -1,18 +1,25 @@
-import Organisation from '@models/Organisation';
-import { IsEmail, IsIn, IsString } from 'class-validator';
+import { IsEmail, IsIn, IsString, Matches } from 'class-validator';
+import { fromBuffer, MimeType } from 'file-type';
+import fs from 'fs';
 import {
+  BadRequestError,
   BodyParam,
   JsonController,
+  OnUndefined,
   Post,
   UploadedFile,
 } from 'routing-controllers';
-import { generatePassword } from '@core/utils/auth';
 import { getRepository } from 'typeorm';
 
+import { generatePassword } from '@core/utils/auth';
+
+import Organisation from '@models/Organisation';
+
 const availableLocales = ['en', 'de', 'de@informal'];
+const validImages: MimeType[] = ['image/png', 'image/jpeg'];
 
 class CreateOrganisationData {
-  @IsString()
+  @Matches(/^[a-z0-9-]+$/)
   id!: string;
 
   @IsString()
@@ -52,11 +59,16 @@ class CreateOrganisationData {
 @JsonController('/organisation')
 export class OrganisationController {
   @Post()
+  @OnUndefined(201)
   async addOrganisation(
     @UploadedFile('logo') logo: Express.Multer.File,
     @BodyParam('data') data: CreateOrganisationData
   ) {
-    console.log(logo);
+    const type = await fromBuffer(logo.buffer);
+    if (!type || !validImages.includes(type.mime)) {
+      throw new BadRequestError('Invalid logo MIME type ' + type?.mime);
+    }
+
     const org = getRepository(Organisation).create({
       id: data.id,
       name: data.organisationName,
@@ -71,7 +83,20 @@ export class OrganisationController {
       email: data.email,
       password: await generatePassword(data.password),
     });
-    const theOrg = await getRepository(Organisation).save(org);
-    return theOrg;
+    await getRepository(Organisation).save(org);
+
+    await new Promise<void>((resolve, reject) => {
+      fs.writeFile(
+        `uploads/logos/${org.id}.${type.ext}`,
+        logo.buffer,
+        (err) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        }
+      );
+    });
   }
 }
