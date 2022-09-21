@@ -19,10 +19,10 @@ export default class Organisation {
   city!: string;
 
   @Column()
-  country!: string;
+  postcode!: string;
 
   @Column()
-  postcode!: string;
+  country!: string;
 
   @Column()
   locale!: string;

@@ -37,14 +37,20 @@
         <AppInput v-model="orgData.cityOrTown" required />
         <span class="label">Postcode</span>
         <AppInput v-model="orgData.postcode" class="w-40" required />
+        <span class="label">Country</span>
+        <AppSelect
+          v-model="orgData.country"
+          :items="[]"
+          class="w-auto max-w-full"
+        />
         <span class="label">Logo</span>
         <AppImageUpload v-model="orgLogo" :width="100" :height="100" />
         <span class="label">Language</span>
         <div>
           <AppSelect
-            v-model="orgData.language"
-            :items="availableLanguages"
-            class="w-auto"
+            v-model="orgData.locale"
+            :items="availableLocales"
+            class="w-auto max-w-full"
           />
         </div>
       </div>
@@ -107,7 +113,7 @@ const subdomain = computed({
   set: (newValue) => (customSubdomain.value = subdomainify(newValue)),
 });
 
-const availableLanguages = [
+const availableLocales = [
   { id: 'en', label: 'English' },
   { id: 'de', label: 'German' },
   { id: 'de@informal', label: 'German (informal)' },
@@ -122,8 +128,9 @@ const orgData = reactive({
   addressLine1: 'Line 1',
   addressLine2: '',
   cityOrTown: 'Bristol',
+  country: '',
   postcode: 'BS1',
-  language: 'en',
+  locale: 'en',
 });
 
 const orgLogo = ref<null | File>(null);

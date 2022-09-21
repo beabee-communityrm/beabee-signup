@@ -30,6 +30,9 @@ class CreateOrganisationData {
   @IsString()
   postcode!: string;
 
+  @IsString()
+  country!: string;
+
   @IsIn(availableLocales)
   locale!: string;
 
@@ -61,6 +64,7 @@ export class OrganisationController {
       addressLine2: data.addressLine2,
       city: data.cityOrTown,
       postcode: data.postcode,
+      country: data.country,
       locale: data.locale,
       firstName: data.firstName,
       lastName: data.lastName,
