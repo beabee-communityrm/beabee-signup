@@ -72,6 +72,10 @@
       </div>
     </section>
 
+    <AppMessageBox v-if="error" class="mb-4">
+      {{ error }}
+    </AppMessageBox>
+
     <p class="text-center">
       <AppButton
         variant="link"
@@ -85,7 +89,7 @@
   </form>
 </template>
 <script lang="ts" setup>
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import slugify from 'slugify';
 import { computed, reactive, ref } from 'vue';
 import countries from 'countries-list/dist/minimal/countries.en.min.json';
@@ -96,6 +100,7 @@ import AppCheckbox from '../components/AppCheckbox.vue';
 import AppSelect from '../components/AppSelect.vue';
 import AppImageUpload from '../components/AppImageUpload.vue';
 import AppButton from '../components/AppButton.vue';
+import AppMessageBox from '../components/AppMessageBox.vue';
 
 function subdomainify(s: string) {
   return slugify(s, { lower: true, strict: true, remove: / /g })
@@ -122,6 +127,15 @@ const availableCountries = Object.entries(countries)
   }))
   .sort((a, b) => (a.label < b.label ? -1 : 1));
 
+const errorMessages = {
+  'invalid-logo-mime-type': 'Logo must be a PNG or JPG',
+  'duplicate-organisation-id':
+    'Organisation ID already exists, please use another',
+  unknown: 'Something went wrong, please contact hello@beabee.io',
+} as const;
+
+type ErrorMessageCode = keyof typeof errorMessages;
+
 const orgData = reactive({
   firstName: 'First',
   lastName: 'Last',
@@ -139,10 +153,24 @@ const orgData = reactive({
 const orgLogo = ref<null | File>(null);
 const readAgreements = ref(true);
 
+const error = ref('');
+const loading = ref(false);
+const externalResults = ref({ logo: ['Error'] });
+
 const validation = useVuelidate(
   { orgLogo: { required }, readAgreements: { yes: sameAs(true) } },
   { orgLogo, readAgreements }
 );
+
+function isKnownError(
+  err: unknown
+): err is AxiosError<{ code: ErrorMessageCode }> {
+  if (axios.isAxiosError(err) && err.response?.status === 400) {
+    const errData = err.response.data as { code: string };
+    return errData.code in errorMessages;
+  }
+  return false;
+}
 
 async function handleSubmit() {
   if (orgLogo.value) {
@@ -150,7 +178,15 @@ async function handleSubmit() {
     data.append('logo', orgLogo.value);
     data.append('data', JSON.stringify({ ...orgData, id: subdomain.value }));
 
-    await axios.post('/api/1.0/organisation', data);
+    error.value = '';
+    loading.value = true;
+    try {
+      await axios.post('/api/1.0/organisation', data);
+    } catch (err) {
+      error.value = isKnownError(err)
+        ? errorMessages[err.response!.data.code]
+        : errorMessages.unknown;
+    }
   }
 }
 </script>
