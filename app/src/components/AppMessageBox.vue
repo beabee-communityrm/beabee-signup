@@ -37,7 +37,7 @@ const iconClasses = {
 };
 
 const contentClasses = {
-  success: 'bg-success text-success',
+  success: 'bg-success-10 text-success',
   warning: 'bg-warning-10 text-primary-80',
   error: 'bg-danger-10 text-danger',
 };

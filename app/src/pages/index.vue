@@ -9,7 +9,13 @@
     audience.
   </p>
 
-  <form @submit.prevent="handleSubmit">
+  <div v-if="isDone">
+    <AppMessageBox type="success">
+      Done! We've received your request and will be in touch soon
+    </AppMessageBox>
+  </div>
+
+  <form v-else @submit.prevent="handleSubmit">
     <section class="mb-8">
       <h3 class="subheading">Your account</h3>
       <div class="details-grid">
@@ -154,6 +160,7 @@ const readAgreements = ref(true);
 
 const error = ref('');
 const loading = ref(false);
+const isDone = ref(false);
 
 const validation = useVuelidate(
   { orgLogo: { required }, readAgreements: { yes: sameAs(true) } },
@@ -168,6 +175,7 @@ async function handleSubmit() {
 
     error.value = '';
     loading.value = true;
+    isDone.value = true;
     try {
       await axios.post('/api/1.0/organisation', data);
     } catch (err) {
