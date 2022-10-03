@@ -38,11 +38,7 @@
         <span class="label">Postcode</span>
         <AppInput v-model="orgData.postcode" class="w-40" required />
         <span class="label">Country</span>
-        <AppSelect
-          v-model="orgData.country"
-          :items="[]"
-          class="w-auto max-w-full"
-        />
+        <AppSelect v-model="orgData.country" :items="availableCountries" />
         <span class="label">Logo</span>
         <AppImageUpload v-model="orgLogo" :width="100" :height="100" />
         <span class="label">Language</span>
@@ -92,6 +88,7 @@
 import axios from 'axios';
 import slugify from 'slugify';
 import { computed, reactive, ref } from 'vue';
+import countries from 'countries-list/dist/minimal/countries.en.min.json';
 import { useVuelidate } from '@vuelidate/core';
 import { required, sameAs } from '@vuelidate/validators';
 import AppInput from '../components/AppInput.vue';
@@ -118,6 +115,12 @@ const availableLocales = [
   { id: 'de', label: 'German' },
   { id: 'de@informal', label: 'German (informal)' },
 ];
+const availableCountries = Object.entries(countries)
+  .map(([id, label]) => ({
+    id,
+    label,
+  }))
+  .sort((a, b) => (a.label < b.label ? -1 : 1));
 
 const orgData = reactive({
   firstName: 'First',
@@ -128,7 +131,7 @@ const orgData = reactive({
   addressLine1: 'Line 1',
   addressLine2: '',
   cityOrTown: 'Bristol',
-  country: '',
+  country: 'GB',
   postcode: 'BS1',
   locale: 'en',
 });
