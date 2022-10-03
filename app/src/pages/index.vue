@@ -89,7 +89,7 @@
   </form>
 </template>
 <script lang="ts" setup>
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import slugify from 'slugify';
 import { computed, reactive, ref } from 'vue';
 import countries from 'countries-list/dist/minimal/countries.en.min.json';
@@ -101,6 +101,7 @@ import AppSelect from '../components/AppSelect.vue';
 import AppImageUpload from '../components/AppImageUpload.vue';
 import AppButton from '../components/AppButton.vue';
 import AppMessageBox from '../components/AppMessageBox.vue';
+import { isApiError } from '../utils';
 
 function subdomainify(s: string) {
   return slugify(s, { lower: true, strict: true, remove: / /g })
@@ -134,8 +135,6 @@ const errorMessages = {
   unknown: 'Something went wrong, please contact hello@beabee.io',
 } as const;
 
-type ErrorMessageCode = keyof typeof errorMessages;
-
 const orgData = reactive({
   firstName: 'First',
   lastName: 'Last',
@@ -155,22 +154,11 @@ const readAgreements = ref(true);
 
 const error = ref('');
 const loading = ref(false);
-const externalResults = ref({ logo: ['Error'] });
 
 const validation = useVuelidate(
   { orgLogo: { required }, readAgreements: { yes: sameAs(true) } },
   { orgLogo, readAgreements }
 );
-
-function isKnownError(
-  err: unknown
-): err is AxiosError<{ code: ErrorMessageCode }> {
-  if (axios.isAxiosError(err) && err.response?.status === 400) {
-    const errData = err.response.data as { code: string };
-    return errData.code in errorMessages;
-  }
-  return false;
-}
 
 async function handleSubmit() {
   if (orgLogo.value) {
@@ -183,9 +171,8 @@ async function handleSubmit() {
     try {
       await axios.post('/api/1.0/organisation', data);
     } catch (err) {
-      error.value = isKnownError(err)
-        ? errorMessages[err.response!.data.code]
-        : errorMessages.unknown;
+      error.value =
+        errorMessages[isApiError(err) ? err.response.data.code : 'unknown'];
     }
   }
 }
