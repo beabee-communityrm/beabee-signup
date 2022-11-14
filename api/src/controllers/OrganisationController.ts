@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { IsEmail, IsIn, IsString, Matches } from 'class-validator';
 import { fromBuffer, MimeType } from 'file-type';
 import fs from 'fs';
@@ -16,6 +17,7 @@ import { generatePassword } from '@core/utils/auth';
 
 import Organisation from '@models/Organisation';
 import { isDuplicateIndex } from '@core/utils/db';
+import config from '@config';
 
 const availableLocales = ['en', 'de', 'de@informal'];
 const availableCountries = Object.keys(countries);
@@ -122,5 +124,10 @@ export class OrganisationController {
         }
       );
     });
+
+    if (config.slackWebhook)
+      await axios.post(config.slackWebhook, {
+        text: `A new organisation (${org.name}) has signed up to beabee!`,
+      });
   }
 }
