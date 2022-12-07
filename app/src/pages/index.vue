@@ -142,16 +142,16 @@ const errorMessages = {
 } as const;
 
 const orgData = reactive({
-  firstName: 'First',
-  lastName: 'Last',
-  email: 'name@email.com',
-  password: '123566',
-  organisationName: 'Organisation',
-  addressLine1: 'Line 1',
+  firstName: '',
+  lastName: '',
+  email: '',
+  password: '',
+  organisationName: '',
+  addressLine1: '',
   addressLine2: '',
-  cityOrTown: 'Bristol',
-  country: 'GB',
-  postcode: 'BS1',
+  cityOrTown: '',
+  country: '',
+  postcode: '',
   locale: 'en',
 });
 
