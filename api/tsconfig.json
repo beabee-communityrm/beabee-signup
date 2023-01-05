@@ -19,7 +19,10 @@
     "sourceMap": true,
     "baseUrl": "./",
     "paths": {
-      "*": ["./node_modules/*"]
+      "*": ["./node_modules/*"],
+      "@config": ["./src/config/config"],
+      "@core/*": ["./src/core/*"],
+      "@models/*": ["./src/models/*"]
     },
     "resolveJsonModule": true,
     "typeRoots": ["./src/typings", "./node_modules/@types/"]

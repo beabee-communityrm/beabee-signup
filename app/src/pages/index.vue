@@ -9,18 +9,24 @@
     audience.
   </p>
 
-  <form @submit.prevent>
+  <div v-if="isDone">
+    <AppMessageBox type="success">
+      Done! We've received your request and will be in touch soon
+    </AppMessageBox>
+  </div>
+
+  <form v-else @submit.prevent="handleSubmit">
     <section class="mb-8">
       <h3 class="subheading">Your account</h3>
       <div class="details-grid">
         <span class="label">First name</span>
-        <AppInput v-model="formData.firstName" required />
+        <AppInput v-model="orgData.firstName" required />
         <span class="label">Last name</span>
-        <AppInput v-model="formData.lastName" required />
+        <AppInput v-model="orgData.lastName" required />
         <span class="label">Email</span>
-        <AppInput v-model="formData.email" type="email" required />
+        <AppInput v-model="orgData.email" type="email" required />
         <span class="label">Password</span>
-        <AppInput v-model="formData.password" type="password" required />
+        <AppInput v-model="orgData.password" type="password" required />
       </div>
     </section>
 
@@ -28,23 +34,25 @@
       <h3 class="subheading">Your organisation</h3>
       <div class="details-grid">
         <span class="label">Name</span>
-        <AppInput v-model="formData.organisationName" required />
+        <AppInput v-model="orgData.organisationName" required />
         <span class="label">Address line 1</span>
-        <AppInput v-model="formData.addressLine1" required />
+        <AppInput v-model="orgData.addressLine1" required />
         <span class="label">Address line 2</span>
-        <AppInput v-model="formData.addressLine2" />
+        <AppInput v-model="orgData.addressLine2" />
         <span class="label">City/town</span>
-        <AppInput v-model="formData.cityOrTown" required />
+        <AppInput v-model="orgData.cityOrTown" required />
         <span class="label">Postcode</span>
-        <AppInput v-model="formData.postcode" class="w-40" required />
+        <AppInput v-model="orgData.postcode" class="w-40" required />
+        <span class="label">Country</span>
+        <AppSelect v-model="orgData.country" :items="availableCountries" />
         <span class="label">Logo</span>
-        <AppImageUpload v-model="formData.logo" :width="100" :height="100" />
+        <AppImageUpload v-model="orgLogo" :width="100" :height="100" />
         <span class="label">Language</span>
         <div>
           <AppSelect
-            v-model="formData.language"
-            :items="availableLanguages"
-            class="w-auto"
+            v-model="orgData.locale"
+            :items="availableLocales"
+            class="w-auto max-w-full"
           />
         </div>
       </div>
@@ -55,7 +63,7 @@
       <p class="mb-4">Lots of text</p>
 
       <AppCheckbox
-        v-model="formData.readAgreements"
+        v-model="readAgreements"
         label="I have read and agree to the service and data processing agreements."
         class="font-semibold"
       />
@@ -70,6 +78,10 @@
       </div>
     </section>
 
+    <AppMessageBox v-if="error" class="mb-4">
+      {{ error }}
+    </AppMessageBox>
+
     <p class="text-center">
       <AppButton
         variant="link"
@@ -83,8 +95,10 @@
   </form>
 </template>
 <script lang="ts" setup>
+import axios from 'axios';
 import slugify from 'slugify';
 import { computed, reactive, ref } from 'vue';
+import countries from 'countries-list/dist/minimal/countries.en.min.json';
 import { useVuelidate } from '@vuelidate/core';
 import { required, sameAs } from '@vuelidate/validators';
 import AppInput from '../components/AppInput.vue';
@@ -92,6 +106,8 @@ import AppCheckbox from '../components/AppCheckbox.vue';
 import AppSelect from '../components/AppSelect.vue';
 import AppImageUpload from '../components/AppImageUpload.vue';
 import AppButton from '../components/AppButton.vue';
+import AppMessageBox from '../components/AppMessageBox.vue';
+import { isApiError } from '../utils';
 
 function subdomainify(s: string) {
   return slugify(s, { lower: true, strict: true, remove: / /g })
@@ -100,19 +116,32 @@ function subdomainify(s: string) {
 }
 
 const customSubdomain = ref('');
-const autoSubdomain = computed(() => subdomainify(formData.organisationName));
+const autoSubdomain = computed(() => subdomainify(orgData.organisationName));
 const subdomain = computed({
   get: () => customSubdomain.value || autoSubdomain.value,
   set: (newValue) => (customSubdomain.value = subdomainify(newValue)),
 });
 
-const availableLanguages = [
+const availableLocales = [
   { id: 'en', label: 'English' },
   { id: 'de', label: 'German' },
   { id: 'de@informal', label: 'German (informal)' },
 ];
+const availableCountries = Object.entries(countries)
+  .map(([id, label]) => ({
+    id,
+    label,
+  }))
+  .sort((a, b) => (a.label < b.label ? -1 : 1));
 
-const formData = reactive({
+const errorMessages = {
+  'invalid-logo-mime-type': 'Logo must be a PNG or JPG',
+  'duplicate-organisation-id':
+    'Organisation ID already exists, please use another',
+  unknown: 'Something went wrong, please contact hello@beabee.io',
+} as const;
+
+const orgData = reactive({
   firstName: '',
   lastName: '',
   email: '',
@@ -121,16 +150,40 @@ const formData = reactive({
   addressLine1: '',
   addressLine2: '',
   cityOrTown: '',
+  country: '',
   postcode: '',
-  logo: '',
-  language: 'en',
-  readAgreements: false,
+  locale: 'en',
 });
 
+const orgLogo = ref<null | File>(null);
+const readAgreements = ref(true);
+
+const error = ref('');
+const loading = ref(false);
+const isDone = ref(false);
+
 const validation = useVuelidate(
-  { logo: { required }, readAgreements: { yes: sameAs(true) } },
-  formData
+  { orgLogo: { required }, readAgreements: { yes: sameAs(true) } },
+  { orgLogo, readAgreements }
 );
+
+async function handleSubmit() {
+  if (orgLogo.value) {
+    const data = new FormData();
+    data.append('logo', orgLogo.value);
+    data.append('data', JSON.stringify({ ...orgData, id: subdomain.value }));
+
+    error.value = '';
+    loading.value = true;
+    isDone.value = true;
+    try {
+      await axios.post('/api/1.0/organisation', data);
+    } catch (err) {
+      error.value =
+        errorMessages[isApiError(err) ? err.response.data.code : 'unknown'];
+    }
+  }
+}
 </script>
 <style scoped>
 .subheading {
